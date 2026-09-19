@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DJ Allmightymix — Event Booking Contract</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --black: #0a0a0a;
+    --panel: #0d0d0d;
+    --panel-2: #0d0d0d;
+    --gold: #e0a83a;
+    --gold-bright: #f2c14e;
+    --gold-dim: #b8860b;
+    --gold-line: rgba(224,168,58,0.55);
+    --cream: #f0ede6;
+    --cream-dim: #a8a29a;
+    --label-gold: #e0b23c;
+    --placeholder: #8a8a8a;
+    --line: rgba(224,168,58,0.35);
+    --err: #d9694f;
+    --ok: #7fae6a;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --serif: 'Cinzel', serif;
+    --sans: 'Manrope', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--black);
+    color:var(--cream);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:32px 16px 80px;
+  }
+  .wrap{max-width:680px;margin:0 auto;}
+
+  header.top{text-align:center;margin-bottom:28px;}
+  header.top .crown{font-size:28px;letter-spacing:6px;color:var(--gold);margin-bottom:6px;}
+  header.top h1{
+    font-family:var(--serif);
+    font-weight:700;
+    font-size:clamp(26px,5vw,38px);
+    letter-spacing:1px;
+    margin:0;
+    color:var(--gold-bright);
+    text-shadow:0 0 24px rgba(205,165,74,0.25);
+  }
+  header.top p{color:var(--cream-dim);font-size:14px;margin:10px 0 0;line-height:1.5;}
+  header.top .contact{
+    margin-top:14px;font-size:13px;color:var(--cream-dim);
+    display:flex;gap:18px;justify-content:center;flex-wrap:wrap;
+  }
+  header.top .contact b{color:var(--gold-bright);}
+
+  /* progress */
+  .progress{display:flex;align-items:center;margin:28px 0 30px;}
+  .progress .dot{
+    width:26px;height:26px;border-radius:50%;
+    border:1px solid var(--gold-line);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-family:var(--sans);font-weight:700;
+    color:var(--cream-dim);background:var(--panel);
+    flex-shrink:0;transition:all .25s ease;
+  }
+  .progress .dot.active{border-color:var(--gold);color:var(--black);background:linear-gradient(115deg,var(--gold-bright) 0%, var(--gold) 45%, var(--gold-dim) 100%);box-shadow:0 0 14px rgba(224,168,58,.35);}
+  .progress .dot.done{border-color:var(--gold);color:var(--gold-bright);background:transparent;}
+  .progress .bar{flex:1;height:1px;background:var(--line);margin:0 4px;}
+  .progress .bar.done{background:var(--gold-dim);}
+
+  .step-label{text-align:center;color:var(--gold-bright);font-size:12px;letter-spacing:2px;margin-bottom:22px;font-weight:600;text-transform:uppercase;}
+
+  section.card{
+    background:var(--panel);
+    border:1px solid var(--gold-line);
+    border-radius:var(--radius);
+    padding:26px 24px 24px;
+    display:none;
+  }
+  section.card.active{display:block;}
+
+  h2.section-title{
+    font-family:var(--sans);
+    color:var(--gold-bright);
+    font-size:20px;
+    margin:0 0 4px;
+    font-weight:700;
+  }
+  p.section-sub{color:var(--cream-dim);font-size:13.5px;margin:0 0 20px;line-height:1.5;opacity:0.85;}
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;font-size:12px;color:var(--label-gold);margin-bottom:8px;
+    text-transform:uppercase;letter-spacing:1px;font-weight:600;
+  }
+  .field label .req{color:var(--gold-bright);}
+  .field input[type=text],
+  .field input[type=tel],
+  .field input[type=email],
+  .field input[type=date],
+  .field input[type=time],
+  .field input[type=number],
+  .field select,
+  .field textarea{
+    width:100%;
+    background:#0a0a0a;
+    border:1px solid var(--gold-line);
+    color:var(--cream);
+    padding:12px 14px;
+    border-radius:var(--radius-sm);
+    font-family:var(--sans);
+    font-size:14.5px;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  .field input::placeholder, .field textarea::placeholder{color:var(--placeholder);}
+  .field input:focus, .field select:focus, .field textarea:focus{
+    border-color:var(--gold-bright);
+  }
+  .field textarea{resize:vertical;min-height:80px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:520px){.row2{grid-template-columns:1fr;}}
+
+  .choice-group{display:flex;gap:10px;flex-wrap:wrap;}
+  .choice{
+    border:1px solid var(--gold-line);background:#0a0a0a;color:var(--cream-dim);
+    padding:10px 16px;border-radius:var(--radius-sm);font-size:13.5px;cursor:pointer;
+    user-select:none;transition:all .15s ease;
+  }
+  .choice input{display:none;}
+  .choice.selected{border-color:var(--gold-bright);color:var(--black);background:linear-gradient(115deg,var(--gold-bright) 0%, var(--gold) 45%, var(--gold-dim) 100%);font-weight:700;}
+
+  .hint{font-size:12px;color:var(--cream-dim);margin-top:6px;line-height:1.4;opacity:0.8;}
+  .error-text{font-size:12px;color:var(--err);margin-top:6px;display:none;}
+  .field.invalid input, .field.invalid select, .field.invalid textarea{border-color:var(--err);}
+  .field.invalid .error-text{display:block;}
+
+  .terms-box{
+    max-height:340px;overflow-y:auto;
+    background:#0a0a0a;border:1px solid var(--gold-line);border-radius:var(--radius-sm);
+    padding:16px 18px;font-size:12.8px;line-height:1.65;color:var(--cream-dim);
+  }
+  .terms-box h3{color:var(--gold-bright);font-size:13px;margin:16px 0 6px;font-family:var(--sans);}
+  .terms-box h3:first-child{margin-top:0;}
+  .terms-box p{margin:0 0 8px;}
+  .terms-box::-webkit-scrollbar{width:8px;}
+  .terms-box::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:4px;}
+
+  .scroll-notice{font-size:12px;color:var(--gold-dim);margin-top:8px;text-align:center;}
+
+  .checkbox-row{
+    display:flex;gap:12px;align-items:flex-start;margin-top:18px;
+    padding:14px;border:1px solid var(--gold-line);border-radius:var(--radius-sm);
+    background:rgba(196,155,74,0.06);
+  }
+  .checkbox-row input{margin-top:3px;accent-color:var(--gold);width:16px;height:16px;flex-shrink:0;}
+  .checkbox-row label{font-size:13px;color:var(--cream);line-height:1.5;}
+
+  .review-block{margin-bottom:14px;}
+  .review-block h4{font-family:var(--sans);color:var(--gold-bright);font-size:13px;margin:0 0 8px;letter-spacing:1px;text-transform:uppercase;}
+  .review-row{display:flex;justify-content:space-between;font-size:13.5px;padding:5px 0;border-bottom:1px dashed var(--line);gap:12px;}
+  .review-row span:first-child{color:var(--cream-dim);}
+  .review-row span:last-child{text-align:right;color:var(--cream);}
+
+  .nav-row{display:flex;justify-content:space-between;margin-top:24px;gap:12px;}
+  button{
+    font-family:var(--sans);font-weight:700;font-size:14px;
+    border-radius:var(--radius-sm);padding:13px 22px;cursor:pointer;
+    border:1px solid transparent;transition:all .15s ease;
+  }
+  button.primary{
+    background:linear-gradient(115deg,var(--gold-bright) 0%, var(--gold) 45%, var(--gold-dim) 100%);
+    color:#171206;flex:1;
+  }
+  button.primary:hover{filter:brightness(1.08);}
+  button.ghost{background:transparent;border:1px solid var(--gold-line);color:var(--label-gold);}
+  button.ghost:hover{border-color:var(--gold-bright);color:var(--cream);}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+
+  .final-actions{display:flex;flex-direction:column;gap:12px;margin-top:22px;}
+  .final-actions button{width:100%;}
+  button.whatsapp{background:linear-gradient(115deg,var(--gold-bright) 0%, var(--gold) 45%, var(--gold-dim) 100%);border:1px solid var(--gold-bright);color:#171206;}
+  button.whatsapp:hover{filter:brightness(1.08);}
+  button.pdf{background:transparent;border:1px solid var(--gold-line);color:var(--gold-bright);}
+  button.pdf:hover{border-color:var(--gold-bright);}
+
+  .success-banner{
+    display:none;text-align:center;padding:16px;margin-top:18px;
+    border:1px solid var(--ok);border-radius:var(--radius-sm);
+    background:rgba(127,174,106,0.08);color:#cfe8cf;font-size:13.5px;line-height:1.6;
+  }
+
+  footer.notice{text-align:center;color:var(--cream-dim);font-size:11.5px;margin-top:26px;line-height:1.6;opacity:0.75;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="crown">♛</div>
+    <h1>DJ ALLMIGHTYMIX</h1>
+    <p>Event Booking Contract — complete every step below, review the terms,<br>and sign to send your agreement for review.</p>
+    <div class="contact">
+      <span>WhatsApp: <b>914-906-0026</b></span>
+      <span>Email: <b>iamdjallmightymix@gmail.com</b></span>
+    </div>
+  </header>
+
+  <div class="progress" id="progressBar"></div>
+  <div class="step-label" id="stepLabel"></div>
+
+  <form id="contractForm" novalidate>
+
+    <!-- STEP 1: CLIENT & EVENT -->
+    <section class="card active" data-step="1">
+      <h2 class="section-title">Client &amp; Event Information</h2>
+      <p class="section-sub">Tell us who's booking and the essentials of the event.</p>
+
+      <div class="row2">
+        <div class="field" data-required>
+          <label>Client Full Name <span class="req">*</span></label>
+          <input type="text" name="clientName" placeholder="Jane Doe">
+          <div class="error-text">Please enter the client's full name.</div>
+        </div>
+        <div class="field" data-required>
+          <label>Client Phone <span class="req">*</span></label>
+          <input type="tel" name="clientPhone" placeholder="(914) 555-0123">
+          <div class="error-text">Please enter a phone number.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Client Email</label>
+        <input type="email" name="clientEmail" placeholder="jane@email.com">
+      </div>
+
+      <div class="row2">
+        <div class="field" data-required>
+          <label>Event Type <span class="req">*</span></label>
+          <select name="eventType">
+            <option value="">Select event type…</option>
+            <option>Wedding</option>
+            <option>Birthday Party</option>
+            <option>Corporate Event</option>
+            <option>Club / Nightlife</option>
+            <option>Quinceañera / Sweet 16</option>
+            <option>Cultural / Community Event</option>
+            <option>Other</option>
+          </select>
+          <div class="error-text">Please select an event type.</div>
+        </div>
+        <div class="field" id="otherTypeField" style="display:none;">
+          <label>If "Other," describe event type</label>
+          <input type="text" name="eventTypeOther" placeholder="Describe the event">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field" data-required>
+          <label>Event Date <span class="req">*</span></label>
+          <input type="date" name="eventDate">
+          <div class="error-text">Please pick an event date.</div>
+        </div>
+        <div class="field" data-required>
+          <label>Start Time <span class="req">*</span></label>
+          <input type="time" name="startTime">
+          <div class="error-text">Please enter a start time.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>End Time</label>
+        <input type="time" name="endTime">
+      </div>
+
+      <div class="field" data-required>
+        <label>Venue Name &amp; Address <span class="req">*</span></label>
+        <textarea name="venue" placeholder="Venue name, street address, city, state, zip"></textarea>
+        <div class="error-text">Please provide the venue name and address.</div>
+      </div>
+
+      <div class="field">
+        <label>Indoor / Outdoor</label>
+        <div class="choice-group" data-group="indoorOutdoor">
+          <label class="choice"><input type="radio" name="indoorOutdoor" value="Indoor">Indoor</label>
+          <label class="choice"><input type="radio" name="indoorOutdoor" value="Outdoor">Outdoor</label>
+        </div>
+      </div>
+
+      <div class="field" data-required>
+        <label>Access Method <span class="req">*</span></label>
+        <div class="choice-group" data-group="accessMethod">
+          <label class="choice"><input type="radio" name="accessMethod" value="Ramp">Ramp</label>
+          <label class="choice"><input type="radio" name="accessMethod" value="Elevator">Elevator</label>
+          <label class="choice"><input type="radio" name="accessMethod" value="Steps">Steps</label>
+        </div>
+        <div class="error-text">Please select an access method.</div>
+      </div>
+
+      <div class="field" id="stepsField" style="display:none;">
+        <label>If Steps: Number of Steps</label>
+        <input type="number" name="stepsCount" min="0" placeholder="e.g. 5">
+        <div class="hint">3 or more steps may include an additional access fee per Section 4.2 of the terms.</div>
+      </div>
+
+      <div class="nav-row">
+        <span></span>
+        <button type="button" class="primary" onclick="goStep(2)">Continue</button>
+      </div>
+    </section>
+
+    <!-- STEP 2: FEES -->
+    <section class="card" data-step="2">
+      <h2 class="section-title">Fees &amp; Payment Information</h2>
+      <p class="section-sub">Enter the agreed pricing. Balance remaining calculates automatically.</p>
+
+      <div class="row2">
+        <div class="field" data-required>
+          <label>Amount for Services ($) <span class="req">*</span></label>
+          <input type="number" name="amountServices" min="0" step="0.01" placeholder="0.00">
+          <div class="error-text">Please enter the total amount for services.</div>
+        </div>
+        <div class="field" data-required>
+          <label>Contract Signing Payment ($) <span class="req">*</span></label>
+          <input type="number" name="signingPayment" min="0" step="0.01" placeholder="0.00">
+          <div class="error-text">Please enter the signing payment amount.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Balance Remaining ($)</label>
+        <input type="text" name="balanceRemaining" readonly style="opacity:.8;">
+      </div>
+
+      <div class="field" data-required>
+        <label>Payment Method <span class="req">*</span></label>
+        <select name="paymentMethod">
+          <option value="">Select payment method…</option>
+          <option>Zelle</option>
+          <option>Cash App</option>
+          <option>Venmo</option>
+          <option>PayPal</option>
+          <option>Cash</option>
+          <option>Bank / Cashier's Check</option>
+          <option>Money Order</option>
+          <option>Other</option>
+        </select>
+        <div class="error-text">Please select a payment method.</div>
+      </div>
+
+      <div class="field">
+        <label>Deposit Proof Provided</label>
+        <input type="text" name="depositProof" placeholder="e.g. Zelle screenshot sent via WhatsApp on 6/2">
+        <div class="hint">Reminder: this contract is confirmed only once DJ Allmightymix verifies the deposit has cleared — a screenshot alone isn't final proof.</div>
+      </div>
+
+      <div class="nav-row">
+        <button type="button" class="ghost" onclick="goStep(1)">Back</button>
+        <button type="button" class="primary" onclick="goStep(3)">Continue</button>
+      </div>
+    </section>
+
+    <!-- STEP 3: MUSIC PLANNER -->
+    <section class="card" data-step="3">
+      <h2 class="section-title">Music Planner / Requests</h2>
+      <p class="section-sub">Requests received 14+ days out get extra effort to be included (Section 3).</p>
+
+      <div class="field" data-required>
+        <label>Requests + Do-Not-Play List <span class="req">*</span></label>
+        <textarea name="musicRequests" placeholder="List must-play songs/artists/genres, and anything on the Do-Not-Play list" style="min-height:120px;"></textarea>
+        <div class="error-text">Please add at least a brief note, even if it's "DJ's choice."</div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Photo Montage?</label>
+          <div class="choice-group" data-group="photoMontage">
+            <label class="choice"><input type="radio" name="photoMontage" value="Yes">Yes</label>
+            <label class="choice"><input type="radio" name="photoMontage" value="No">No</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Karaoke?</label>
+          <div class="choice-group" data-group="karaoke">
+            <label class="choice"><input type="radio" name="karaoke" value="Yes">Yes</label>
+            <label class="choice"><input type="radio" name="karaoke" value="No">No</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-row">
+        <button type="button" class="ghost" onclick="goStep(2)">Back</button>
+        <button type="button" class="primary" onclick="goStep(4)">Continue</button>
+      </div>
+    </section>
+
+    <!-- STEP 4: TERMS -->
+    <section class="card" data-step="4">
+      <h2 class="section-title">Terms &amp; Conditions</h2>
+      <p class="section-sub">Please read Sections 1–9 in full before signing. Scroll to the bottom to continue.</p>
+
+      <div class="terms-box" id="termsBox">
+        <h3>1. General Provisions</h3>
+        <p>1.1 Services are provided specifically for the event type specified and none other; if the event type differs, DJ Allmightymix reserves the right to terminate performance.</p>
+        <p>1.2 The event date is not reserved until this contract (or a Retainer Agreement) is returned with the contract signing payment. The client will be informed if others are interested in the same date.</p>
+        <p>1.3 This contract is excused by detention of personnel due to sickness, accidents, riots, strikes, epidemics, Acts of God, Force Majeure, or Acts of War. DJ Allmightymix will make reasonable efforts to find replacement entertainment at the agreed fees; if unable to, the client receives a 100% refund of fees paid. In all cases, liability is limited exclusively to a refund of fees paid — no indirect or consequential damages.</p>
+        <p>1.4 DJ Allmightymix guarantees readiness to perform at the event's start time. No guarantee is made on arrival time for setup; access is requested at least 90 minutes before and after the event.</p>
+        <p>1.5 Governed by the laws of New Jersey and New York; any suit shall be filed in Bergen County.</p>
+        <p>1.6 Except for negligent acts by DJ Allmightymix's personnel, the client agrees to defend, indemnify, and hold DJ Allmightymix harmless from claims, damages, losses, and expenses pertaining to the performance.</p>
+        <p>1.7 In any civil action to enforce this agreement, the losing party pays the prevailing party's attorney's fees and court costs.</p>
+        <p>1.8 The client may not transfer this contract without DJ Allmightymix's prior written consent.</p>
+        <p>1.9 Not binding until signed by an authorized representative of DJ Allmightymix. Changes must be written and signed by both parties — oral agreements are non-binding.</p>
+        <p>1.10 If any clause is found illegal, the remainder of the agreement stays in force.</p>
+        <p>1.11 DJ Allmightymix's choice not to exercise a right does not waive that right for the future.</p>
+        <p>1.12 DJ Allmightymix acts as a subcontractor to the client, not as an employee.</p>
+
+        <h3>2. Fees</h3>
+        <p>2.1 Amount for Services is the total contract price.</p>
+        <p>2.2 The Contract Signing Payment is non-refundable and secures the date; it is subtracted from the total amount for services.</p>
+        <p>2.3 Balance is the amount remaining after the signing payment and any other payments made.</p>
+        <p>2.4 Schedule: payments may be made in increments up to 30 days before the event (more than $250/month permitted). Final payment is due in full 30 days before the event — if unpaid, DJ Allmightymix may reopen the date and cancel performance, and the client remains responsible for the full remaining balance. If the contract is signed less than 30 days before the event, full payment is due at signing.</p>
+        <p>2.5 DJ Allmightymix may pursue legal means to recover any unpaid balance, plus resulting court and legal fees.</p>
+        <p>2.6 A request to pay the balance on the day of the event must be received in writing at least 30 days prior; if granted, payment must be cash, cashier's check, or money order, paid before setup begins. If unpaid 15 minutes after the scheduled start, DJ Allmightymix and staff will leave and the client remains responsible for the balance.</p>
+        <p>2.7 A $100 fee applies to all returned checks.</p>
+        <p>2.8 Deposit Proof &amp; Verification: the client must provide a deposit screenshot/receipt. The contract is confirmed only once the deposit is verified as received/cleared — a screenshot alone is not accepted as final proof. Falsified proof may result in cancellation and legal action.</p>
+
+        <h3>3. Play List</h3>
+        <p>3.1 A written music planner or request list must be received at least 14 days prior to be included in programming guidelines.</p>
+        <p>3.2 The planner should include a "Do Not Play" list of songs the client does not want played.</p>
+        <p>3.3 With or without a planner, DJ Allmightymix will attempt requests but isn't responsible if selections are unavailable.</p>
+        <p>3.4 Extra effort is made for requests received in writing 14+ days out; use of DJ Allmightymix's music selection system counts as "in writing."</p>
+        <p>3.5 DJ Allmightymix may add or substitute selections to increase dance participation, none of which will be on the Do Not Play list.</p>
+        <p>3.6 DJ Allmightymix may modify song order for appropriate presentation.</p>
+
+        <h3>4. Venue Access</h3>
+        <p>4.1 The client must provide immediate, unencumbered, nonhazardous access into, through, and out of the loading area, facility, and workspace.</p>
+        <p>4.2 Ramp or elevator access is required between parking/service entrance and setup area. If steps are the only access, a $10-per-step fee applies for 3 or more steps; DJ Allmightymix must be notified of step-only access before this contract is signed.</p>
+        <p>4.3 The client is responsible for any venue-imposed charges, including parking, electric power, and overtime for setup/takedown.</p>
+
+        <h3>5. Working Conditions</h3>
+        <p>5.1 A 6x6 ft area for the DJ setup, plus space for speakers; an additional 6x6 ft area for screen/projector if needed, positioned within view of most guests and 50 ft or less from the DJ area.</p>
+        <p>5.2 A 120-volt, 3-prong grounded outlet (15+ amps) within 50 ft of the setup area. DJ Allmightymix isn't responsible for ground-loop hum caused by venue wiring.</p>
+        <p>5.3 Full protection of equipment from adverse weather — sun, rain, wind.</p>
+        <p>5.4 Crowd control if warranted, directions to the venue, and free parking.</p>
+        <p>5.5 For outdoor events, a dry setup area is required; if the ground is soft, plywood must be placed in a 6x6 ft area. The client is liable for damages, injuries, or delays from failing to meet these provisions.</p>
+
+        <h3>6. Safety of DJ Allmightymix's Personnel</h3>
+        <p>6.1 The client must take steps to protect equipment, music, and personnel during the event. Damages from inadequate protection (absent DJ Allmightymix's gross negligence) are payable by the client, including repair/replacement and medical costs.</p>
+        <p>6.2 If a threat of injury arises, DJ Allmightymix may cease performance; if resolved within 15 minutes, performance resumes under the original terms. Full payment is owed regardless of resolution or resumption.</p>
+        <p>6.3 DJ Allmightymix may deny guests access to the sound system, recordings, or equipment to prevent damage or injury.</p>
+
+        <h3>7. Cancellation</h3>
+        <p>7.1 This agreement can only be canceled by mutual written consent.</p>
+        <p>7.2 If cancellation is agreed in writing, the client pays any unrecoverable costs already incurred (not exceeding the total fee).</p>
+        <p>7.3 Up to 45 days before the event: DJ Allmightymix keeps the Contract Signing Payment.</p>
+        <p>7.4 30–45 days before the event: DJ Allmightymix is entitled to 75% of the amount for services.</p>
+        <p>7.5 30 days or less before the event: DJ Allmightymix is entitled to 100% of the amount for services.</p>
+
+        <h3>8. Photo Montages</h3>
+        <p>8.1 All montage materials are due 15 days before the event.</p>
+        <p>8.2 A $50 late fee (cash, money order, or cashier's check) applies to materials received after that — unpaid, the montage won't be presented and the montage fee is retained.</p>
+        <p>8.3 Materials sent later than 10 days before the event may not leave enough time to develop the montage.</p>
+
+        <h3>9. Song Content</h3>
+        <p>9.1 DJ Allmightymix isn't responsible for foul or abusive content in songs or on-mic comments. Karaoke versions may star out words, but singers may still sing them aloud. Two language announcements will be made on request, but the evening can't be fully policed. Standard non-karaoke music is radio/censored versions.</p>
+
+        <h3>Final Notice</h3>
+        <p>This contract may not be altered, cancelled, assigned, or transferred without DJ Allmightymix's consent. Unauthorized changes void the contract and forfeit the signing fee.</p>
+      </div>
+      <div class="scroll-notice" id="scrollNotice">↓ Scroll to read all sections ↓</div>
+
+      <div class="nav-row">
+        <button type="button" class="ghost" onclick="goStep(3)">Back</button>
+        <button type="button" class="primary" id="toSignBtn" onclick="goStep(5)">I've Read the Terms — Continue</button>
+      </div>
+    </section>
+
+    <!-- STEP 5: REVIEW & SIGN -->
+    <section class="card" data-step="5">
+      <h2 class="section-title">Review &amp; Sign</h2>
+      <p class="section-sub">Confirm the details below, then type your name as your legal signature.</p>
+
+      <div id="reviewOutput"></div>
+
+      <div class="field" data-required style="margin-top:18px;">
+        <label>Client Signature — type your full legal name <span class="req">*</span></label>
+        <input type="text" name="signatureName" placeholder="Type full name to sign">
+        <div class="error-text">Please type your full name to sign.</div>
+      </div>
+
+      <div class="field">
+        <label>Signature Date</label>
+        <input type="date" name="signatureDate">
+      </div>
+
+      <div class="checkbox-row field" data-required id="agreeRow">
+        <input type="checkbox" name="agree" id="agreeCheckbox">
+        <label for="agreeCheckbox">I acknowledge and agree to all terms in Sections 1–9, confirm the information provided is accurate, and understand that this contract is complete/confirmed only after DJ Allmightymix verifies that the deposit is received and cleared.</label>
+      </div>
+
+      <div class="nav-row">
+        <button type="button" class="ghost" onclick="goStep(4)">Back</button>
+        <button type="button" class="primary" onclick="finalizeContract()">Sign &amp; Generate Contract</button>
+      </div>
+
+      <div class="final-actions" id="finalActions" style="display:none;">
+        <button type="button" class="pdf" onclick="downloadPDF()">Download Signed Contract (PDF)</button>
+        <button type="button" class="whatsapp" onclick="sendToWhatsApp()">Send to DJ Allmightymix on WhatsApp</button>
+        <div class="success-banner" id="successBanner">
+          Your contract is signed and ready. Download the PDF first, then tap "Send to WhatsApp" — attach the PDF you just downloaded (and your deposit screenshot) in the chat before sending.
+        </div>
+      </div>
+    </section>
+
+  </form>
+
+  <footer class="notice">
+    This booking is confirmed only once DJ Allmightymix reviews this agreement, verifies your deposit has cleared, and countersigns.<br>
+    Questions? WhatsApp 914-906-0026 or email iamdjallmightymix@gmail.com
+  </footer>
+
+</div>
+
+<script>
+const totalSteps = 5;
+const stepNames = {
+  1:"Client & Event Details",
+  2:"Fees & Payment",
+  3:"Music Planner",
+  4:"Terms & Conditions",
+  5:"Review & Sign"
+};
+let currentStep = 1;
+
+function renderProgress(){
+  const bar = document.getElementById('progressBar');
+  bar.innerHTML = '';
+  for(let i=1;i<=totalSteps;i++){
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i===currentStep ? ' active' : (i<currentStep ? ' done' : ''));
+    dot.textContent = i<currentStep ? '✓' : i;
+    bar.appendChild(dot);
+    if(i<totalSteps){
+      const line = document.createElement('div');
+      line.className = 'bar' + (i<currentStep ? ' done' : '');
+      bar.appendChild(line);
+    }
+  }
+  document.getElementById('stepLabel').textContent = stepNames[currentStep];
+}
+
+function showStep(n){
+  document.querySelectorAll('.card').forEach(c=>{
+    c.classList.toggle('active', parseInt(c.dataset.step)===n);
+  });
+  currentStep = n;
+  renderProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(n===5) buildReview();
+}
+
+function validateStep(n){
+  let valid = true;
+  const card = document.querySelector(`.card[data-step="${n}"]`);
+  card.querySelectorAll('.field[data-required]').forEach(f=>{
+    const input = f.querySelector('input[type=text],input[type=tel],input[type=email],input[type=date],input[type=time],input[type=number],select,textarea');
+    if(input){
+      if(!input.value || !input.value.trim()){ f.classList.add('invalid'); valid=false; }
+      else f.classList.remove('invalid');
+    } else {
+      // radio group
+      const group = f.querySelector('[data-group]') ? f : null;
+    }
+  });
+  // radio-group required checks (Step 1 access method)
+  if(n===1){
+    const access = card.querySelector('[name="accessMethod"]:checked');
+    const accessField = card.querySelector('[data-group="accessMethod"]').closest('.field');
+    if(!access){ accessField.classList.add('invalid'); valid=false; } else accessField.classList.remove('invalid');
+  }
+  if(n===5){
+    const agree = document.getElementById('agreeCheckbox');
+    const agreeRow = document.getElementById('agreeRow');
+    if(!agree.checked){ agreeRow.classList.add('invalid'); agreeRow.style.borderColor='var(--err)'; valid=false; }
+    else { agreeRow.classList.remove('invalid'); agreeRow.style.borderColor='var(--gold-dim)'; }
+  }
+  return valid;
+}
+
+function goStep(n){
+  if(n > currentStep){
+    if(!validateStep(currentStep)) return;
+  }
+  showStep(n);
+}
+
+// choice pills behavior
+document.querySelectorAll('.choice-group').forEach(group=>{
+  group.querySelectorAll('.choice').forEach(choice=>{
+    choice.addEventListener('click', ()=>{
+      group.querySelectorAll('.choice').forEach(c=>c.classList.remove('selected'));
+      choice.classList.add('selected');
+      choice.querySelector('input').checked = true;
+      if(group.dataset.group === 'accessMethod'){
+        const stepsField = document.getElementById('stepsField');
+        stepsField.style.display = choice.querySelector('input').value === 'Steps' ? 'block' : 'none';
+      }
+    });
+  });
+});
+
+// event type "other" toggle
+document.querySelector('[name="eventType"]').addEventListener('change', e=>{
+  document.getElementById('otherTypeField').style.display = e.target.value === 'Other' ? 'block' : 'none';
+});
+
+// auto-calc balance
+function recalcBalance(){
+  const amt = parseFloat(document.querySelector('[name="amountServices"]').value) || 0;
+  const sign = parseFloat(document.querySelector('[name="signingPayment"]').value) || 0;
+  const bal = Math.max(amt - sign, 0);
+  document.querySelector('[name="balanceRemaining"]').value = '$' + bal.toFixed(2);
+}
+document.querySelector('[name="amountServices"]').addEventListener('input', recalcBalance);
+document.querySelector('[name="signingPayment"]').addEventListener('input', recalcBalance);
+
+// terms scroll enforcement
+const termsBox = document.getElementById('termsBox');
+const scrollNotice = document.getElementById('scrollNotice');
+termsBox.addEventListener('scroll', ()=>{
+  const atBottom = termsBox.scrollTop + termsBox.clientHeight >= termsBox.scrollHeight - 10;
+  if(atBottom){
+    scrollNotice.style.display = 'none';
+  }
+});
+
+// default signature date = today
+document.querySelector('[name="signatureDate"]').valueAsDate = new Date();
+
+function fv(name){
+  const el = document.querySelector(`[name="${name}"]`);
+  return el ? el.value : '';
+}
+function frv(name){
+  const el = document.querySelector(`[name="${name}"]:checked`);
+  return el ? el.value : '—';
+}
+
+function buildReview(){
+  const eventType = fv('eventType') === 'Other' ? fv('eventTypeOther') || 'Other' : fv('eventType');
+  const html = `
+    <div class="review-block">
+      <h4>Client &amp; Event</h4>
+      <div class="review-row"><span>Client</span><span>${esc(fv('clientName'))}</span></div>
+      <div class="review-row"><span>Phone</span><span>${esc(fv('clientPhone'))}</span></div>
+      <div class="review-row"><span>Email</span><span>${esc(fv('clientEmail')) || '—'}</span></div>
+      <div class="review-row"><span>Event Type</span><span>${esc(eventType)}</span></div>
+      <div class="review-row"><span>Date</span><span>${esc(fv('eventDate'))}</span></div>
+      <div class="review-row"><span>Time</span><span>${esc(fv('startTime'))} – ${esc(fv('endTime')) || 'TBD'}</span></div>
+      <div class="review-row"><span>Venue</span><span>${esc(fv('venue'))}</span></div>
+      <div class="review-row"><span>Indoor/Outdoor</span><span>${esc(frv('indoorOutdoor'))}</span></div>
+      <div class="review-row"><span>Access</span><span>${esc(frv('accessMethod'))}${frv('accessMethod')==='Steps' ? ' ('+esc(fv('stepsCount')||'?')+' steps)' : ''}</span></div>
+    </div>
+    <div class="review-block">
+      <h4>Fees &amp; Payment</h4>
+      <div class="review-row"><span>Amount for Services</span><span>$${esc(fv('amountServices')||'0')}</span></div>
+      <div class="review-row"><span>Signing Payment</span><span>$${esc(fv('signingPayment')||'0')}</span></div>
+      <div class="review-row"><span>Balance Remaining</span><span>${esc(fv('balanceRemaining')||'$0.00')}</span></div>
+      <div class="review-row"><span>Payment Method</span><span>${esc(fv('paymentMethod'))}</span></div>
+    </div>
+    <div class="review-block">
+      <h4>Music Planner</h4>
+      <div class="review-row"><span>Photo Montage</span><span>${esc(frv('photoMontage'))}</span></div>
+      <div class="review-row"><span>Karaoke</span><span>${esc(frv('karaoke'))}</span></div>
+      <div class="review-row"><span>Requests</span><span style="max-width:60%;">${esc(fv('musicRequests'))||'—'}</span></div>
+    </div>
+  `;
+  document.getElementById('reviewOutput').innerHTML = html;
+}
+
+function esc(s){
+  const d = document.createElement('div');
+  d.textContent = s ?? '';
+  return d.innerHTML;
+}
+
+let contractLocked = false;
+
+function finalizeContract(){
+  if(!validateStep(5)) return;
+  contractLocked = true;
+  document.getElementById('finalActions').style.display = 'flex';
+  document.getElementById('successBanner').style.display = 'block';
+  document.querySelectorAll('#contractForm input, #contractForm select, #contractForm textarea').forEach(el=>el.disabled=true);
+  document.querySelectorAll('.choice').forEach(el=>el.style.pointerEvents='none');
+  window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+}
+
+function getAllData(){
+  const eventType = fv('eventType') === 'Other' ? (fv('eventTypeOther')||'Other') : fv('eventType');
+  return {
+    clientName: fv('clientName'), clientPhone: fv('clientPhone'), clientEmail: fv('clientEmail'),
+    eventType, eventDate: fv('eventDate'), startTime: fv('startTime'), endTime: fv('endTime'),
+    venue: fv('venue'), indoorOutdoor: frv('indoorOutdoor'), accessMethod: frv('accessMethod'),
+    stepsCount: fv('stepsCount'),
+    amountServices: fv('amountServices'), signingPayment: fv('signingPayment'),
+    balanceRemaining: fv('balanceRemaining'), paymentMethod: fv('paymentMethod'),
+    depositProof: fv('depositProof'),
+    musicRequests: fv('musicRequests'), photoMontage: frv('photoMontage'), karaoke: frv('karaoke'),
+    signatureName: fv('signatureName'), signatureDate: fv('signatureDate')
+  };
+}
+
+function downloadPDF(){
+  const d = getAllData();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'letter'});
+  const marginL = 54, marginR = 54, pageW = doc.internal.pageSize.getWidth();
+  const usableW = pageW - marginL - marginR;
+  let y = 60;
+
+  function ensureSpace(h){
+    if(y + h > 740){ doc.addPage(); y = 60; }
+  }
+  function heading(text, size=14){
+    ensureSpace(24);
+    doc.setFont('helvetica','bold'); doc.setFontSize(size); doc.setTextColor(20,20,20);
+    doc.text(text, marginL, y); y += size*1.3;
+  }
+  function subheading(text){
+    ensureSpace(18);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(40,40,40);
+    doc.text(text, marginL, y); y += 16;
+  }
+  function row(label, value){
+    ensureSpace(16);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
+    doc.text(label + ':', marginL, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20);
+    const lines = doc.splitTextToSize(String(value||'—'), usableW - 150);
+    doc.text(lines, marginL + 150, y);
+    y += Math.max(14, lines.length*12);
+  }
+  function paragraph(text){
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(40,40,40);
+    const lines = doc.splitTextToSize(text, usableW);
+    lines.forEach(line=>{
+      ensureSpace(12);
+      doc.text(line, marginL, y);
+      y += 11.5;
+    });
+    y += 4;
+  }
+
+  heading('DJ ALLMIGHTYMIX', 18);
+  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(80,80,80);
+  doc.text('Event Booking Contract — Signed Agreement', marginL, y); y += 26;
+
+  subheading('CLIENT & EVENT INFORMATION');
+  row('Client Name', d.clientName);
+  row('Phone', d.clientPhone);
+  row('Email', d.clientEmail);
+  row('Event Type', d.eventType);
+  row('Event Date', d.eventDate);
+  row('Start / End Time', `${d.startTime} - ${d.endTime||'TBD'}`);
+  row('Venue', d.venue);
+  row('Indoor / Outdoor', d.indoorOutdoor);
+  row('Access Method', d.accessMethod + (d.accessMethod==='Steps' ? ` (${d.stepsCount||'?'} steps)` : ''));
+  y += 6;
+
+  subheading('FEES & PAYMENT');
+  row('Amount for Services', '$'+(d.amountServices||'0'));
+  row('Contract Signing Payment', '$'+(d.signingPayment||'0'));
+  row('Balance Remaining', d.balanceRemaining || '$0.00');
+  row('Payment Method', d.paymentMethod);
+  row('Deposit Proof', d.depositProof);
+  y += 6;
+
+  subheading('MUSIC PLANNER / REQUESTS');
+  row('Photo Montage', d.photoMontage);
+  row('Karaoke', d.karaoke);
+  row('Requests / Do-Not-Play', d.musicRequests);
+  y += 10;
+
+  doc.addPage(); y = 60;
+  heading('TERMS & CONDITIONS (SECTIONS 1–9)', 14);
+  y += 4;
+
+  const terms = document.getElementById('termsBox').innerText;
+  paragraph(terms);
+
+  y += 10;
+  ensureSpace(80);
+  subheading('CLIENT ACKNOWLEDGMENT & SIGNATURE');
+  row('Signed Name', d.signatureName);
+  row('Signature Date', d.signatureDate);
+  paragraph('By typing the name above, the client acknowledges and agrees to all terms in Sections 1-9, confirms the information provided is accurate, and understands this contract is complete and confirmed only after DJ Allmightymix verifies that the deposit has been received and cleared.');
+
+  y += 20;
+  ensureSpace(40);
+  doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(120,120,120);
+  doc.text('DJ Allmightymix Signature: ______________________________   Countersign Date: ______________', marginL, y);
+
+  doc.save(`DJ_Allmightymix_Contract_${(d.clientName||'client').replace(/\\s+/g,'_')}.pdf`);
+}
+
+function sendToWhatsApp(){
+  const d = getAllData();
+  const msg =
+`New signed booking contract:
+
+Client: ${d.clientName}
+Phone: ${d.clientPhone}
+Event: ${d.eventType} on ${d.eventDate}, ${d.startTime}-${d.endTime||'TBD'}
+Venue: ${d.venue}
+Amount: $${d.amountServices} | Signing Payment: $${d.signingPayment} | Balance: ${d.balanceRemaining}
+Payment Method: ${d.paymentMethod}
+Signed by: ${d.signatureName} on ${d.signatureDate}
+
+I've downloaded my signed contract PDF and will attach it here now, along with my deposit proof.`;
+  const url = `https://wa.me/19149060026?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+renderProgress();
+</script>
+</body>
+</html>
